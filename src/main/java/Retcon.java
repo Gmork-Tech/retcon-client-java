@@ -41,6 +41,10 @@ public class Retcon extends WebSocketClient {
                 .clients()
                 .get(name);
 
+        if (config == null) {
+            throw new RuntimeException("Unable to find config for name: " + name);
+        }
+
         // Create a new Retcon instance
         return fromConfig(config);
     }
