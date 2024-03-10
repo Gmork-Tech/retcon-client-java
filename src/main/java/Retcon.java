@@ -1,42 +1,37 @@
+import config.RetconClientConfig;
 import config.RetconConfig;
-import io.smallrye.config.SmallRyeConfig;
-import org.eclipse.microprofile.config.ConfigProvider;
-import org.java_websocket.client.WebSocketClient;
-import org.java_websocket.handshake.ServerHandshake;
+import io.smallrye.config.SmallRyeConfigBuilder;
 
 import java.net.URI;
 
-public class Retcon extends WebSocketClient {
+public class Retcon {
 
-    private Retcon(URI uri) {
-        super(uri);
+    private final RetconClient client;
+    private RetconClientConfig config;
+
+    public Retcon(URI uri) {
+        client = new RetconClient(uri);
     }
 
-    @Override
-    public void onOpen(ServerHandshake serverHandshake) {
-
+    public RetconClient getClient() {
+        return client;
     }
 
-    @Override
-    public void onMessage(String s) {
-
+    public RetconClientConfig getConfig() {
+        return config;
     }
 
-    @Override
-    public void onClose(int i, String s, boolean b) {
-
-    }
-
-    @Override
-    public void onError(Exception e) {
-
+    private void setConfig(RetconClientConfig config) {
+        this.config = config;
     }
 
     public static Retcon fromConfigName(String name) {
         // Get the config by name from any SmallRye ConfigProvider
-        var config = ConfigProvider
-                .getConfig()
-                .unwrap(SmallRyeConfig.class)
+        var config = new SmallRyeConfigBuilder()
+                .addDefaultInterceptors()
+                .addDefaultSources()
+                .withMapping(RetconConfig.class)
+                .build()
                 .getConfigMapping(RetconConfig.class)
                 .clients()
                 .get(name);
@@ -49,10 +44,11 @@ public class Retcon extends WebSocketClient {
         return fromConfig(config);
     }
 
-    public static Retcon fromConfig(RetconConfig.RetconClientConfig config) {
+    public static Retcon fromConfig(RetconClientConfig config) {
         var uri = URI.create(config.scheme() + "://" + config.host() + "/ws/" + config.appId());
         var retcon = new Retcon(uri);
-        retcon.connect();
+        retcon.getClient().connect();
+        retcon.setConfig(config);
         return retcon;
     }
 
